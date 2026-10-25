@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lexical Decision Task</title>
+<style>
+:root{color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#000;--fg:#f2f2f2;--mut:#9a9a9a;--card:#141414;--line:#333;--acc:#4f9dff}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh}
+#app{max-width:760px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:22px;margin:0 0 6px}
+p{margin:8px 0}
+.mut{color:var(--mut);font-size:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin:14px 0}
+label{display:block;font-size:14px;color:var(--mut);margin-bottom:4px}
+input[type=text],input[type=number],textarea{width:100%;background:#000;color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:10px;font:inherit}
+.row{display:flex;gap:12px;flex-wrap:wrap}.row>div{flex:1;min-width:140px}
+button{background:var(--acc);color:#001225;border:0;border-radius:8px;padding:11px 18px;font:inherit;font-weight:600;cursor:pointer}
+button.sec{background:#262626;color:var(--fg);border:1px solid var(--line)}
+.hide{display:none!important}
+.scale{display:flex;gap:8px;flex-wrap:wrap}.scale button{flex:1;min-width:44px;padding:16px 0}
+#stage{display:flex;align-items:center;justify-content:center;flex:1;min-height:160px;font-size:clamp(40px,12vw,64px);letter-spacing:2px;-webkit-user-select:none;user-select:none}
+#s-task:not(.hide){display:flex;flex-direction:column;height:calc(100vh - 40px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));height:calc(100dvh - 40px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));min-height:340px}
+button{touch-action:manipulation;-webkit-user-select:none;user-select:none}
+body{-webkit-tap-highlight-color:transparent}
+#pad button:active{background:var(--acc);color:#001225}
+#pad{display:flex;gap:12px;justify-content:center}
+#pad button{font-size:18px;font-weight:700}
+#pad button{flex:1;max-width:260px;min-height:96px;padding:16px}
+.banner{font-size:28px;font-weight:700;color:var(--acc)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:left}
+.wrap{overflow-x:auto}
+.tbox{max-height:300px;overflow-y:auto}
+</style>
+</head>
+<body>
+<div id="app">
+
+<section id="s-start">
+  <h1>Lexical Decision Task</h1>
+  <div class="card">
+    <p>You will see a series of letter strings, one at a time.</p>
+    <p>If the letters make up a <b>real word</b>, press the <b>RIGHT arrow</b> key.<br>
+       If they do <b>not</b> make up a word, press the <b>LEFT arrow</b> key.</p>
+    <p id="touchnote" class="hide"><b>On a phone or tablet:</b> tap the <b>WORD</b> button (right) if the letters make a real word, or the <b>NOT A WORD</b> button (left) if they do not.</p>
+    <p class="mut">Respond as quickly and accurately as you can.</p>
+  </div>
+  <div class="card">
+    <div class="row">
+      <div><label for="pid">Participant name / ID</label><input id="pid" type="text" autocomplete="off"></div>
+      <div><label for="att">Attempt number</label><input id="att" type="number" min="1" value="1" readonly tabindex="-1" style="opacity:.7;cursor:not-allowed"></div>
+    </div>
+    <p class="mut" id="attnote">The attempt number is assigned automatically and cannot be changed.</p>
+    <p><button id="begin">Begin</button> <button id="viewfirst" class="sec hide">View my saved first attempt</button></p>
+    <p class="mut" id="mode"></p>
+  </div>
+</section>
+
+<section id="res" class="card hide">
+  <p><b>Researcher view</b> <span class="mut">(only you and editors see this)</span></p>
+  <p><button id="rload">Load all results</button> <label style="display:inline"><input type="checkbox" id="rfirst"> First attempts only</label></p>
+  <p class="mut" id="rinfo"></p>
+  <textarea id="rtsv" rows="6" readonly></textarea>
+  <p><button id="rcopy" class="sec">Copy for spreadsheet</button> <button id="rdl" class="sec">Download CSV</button></p>
+</section>
+
+<section id="s-task" class="hide">
+  <div id="stage"></div>
+  <div id="pad">
+    <button class="sec" data-k="left">&larr; NOT A WORD</button>
+    <button class="sec" data-k="right">WORD &rarr;</button>
+  </div>
+  <p class="mut" id="prog" style="text-align:center"></p>
+</section>
+
+<section id="s-int" class="hide">
+  <h1>Short interview</h1>
+  <div class="card"><p id="int-q" style="font-size:20px;font-weight:600"></p><div id="int-body"></div></div>
+</section>
+
+<section id="s-end" class="hide">
+  <h1>Thank you for participating!</h1>
+  <div class="card">
+    <div class="banner" id="e-banner"></div>
+    <p id="e-meta" class="mut"></p>
+    <p id="e-sum"></p>
+    <p id="e-iv"></p>
+    <p id="e-first" class="mut"></p>
+    <p id="e-save"></p>
+  </div>
+  <div class="card">
+    <p><b>Reaction time (RT) for each word</b></p>
+    <div class="wrap"><table id="tbl"></table></div>
+  </div>
+  <div class="card">
+    <p><b>Copy results</b> &mdash; includes the participant name, attempt, each word and its RT. Paste into Excel / Google Sheets (one word per row).</p>
+    <p><label style="display:inline"><input type="checkbox" id="hdr" checked> Include header row</label></p>
+    <textarea id="tsv" rows="6" readonly></textarea>
+    <p><button id="copy">Copy results</button> <span class="mut" id="copied"></span></p>
+  </div>
+  <p><button class="sec" id="again">Back to start</button></p>
+</section>
+
+</div>
+<script>
+// ---- Settings ----
+var ITI_MS = 500; // blank gap between words (the "+" is removed). Set 0 for none.
+var STIM = ("even:1,ire:1,cat:1,flinch:1,mirth:1,sun:1,wry:1,hop:1,tree:1,dwelt:1,wisp:1,wish:1,chop:1,rug:1,tent:1,quip:1,glad:1,throb:1,aft:1,tusk:1," +
+  "jish:0,curp:0,evat:0,truv:0,blaf:0,unek:0,kav:0,flom:0,obim:0,drup:0,yat:0,zid:0,stup:0,teg:0,plim:0,bap:0,wug:0,spom:0,mest:0,tulp:0")
+  .split(",").map(function(s){var p=s.split(":");return{c:p[0],w:+p[1]};});
+var KEY="ldt_attempts_v1";
+// ---- Google Sheet connection ----
+// Paste your Google Apps Script "Web app" URL between the quotes. Leave empty to turn sending off.
+var SHEET_URL="https://script.google.com/a/macros/sancarlos.edu.ph/s/AKfycby3PBfvbg-FsmjPZi5MwDtV94cmIOL09sOH6WSgTZb28g436xnQopYJznEdstDFifoA/exec";
+var PEND="ldt_pending_v1";
+function pend(){try{return JSON.parse(localStorage.getItem(PEND))||[]}catch(e){return[]}}
+function setPend(a){try{localStorage.setItem(PEND,JSON.stringify(a))}catch(e){}}
+function postSheet(p){return fetch(SHEET_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(p),keepalive:true})}
+function sendToSheet(rec){
+  if(!SHEET_URL)return;
+  var el=document.getElementById("e-save"),p={head:HEAD,when:rec.when,rows:rec.rows};
+  el.textContent="Sending results...";
+  postSheet(p).then(function(){el.textContent="Results sent to the researcher."}).catch(function(){
+    var a=pend();a.push(p);setPend(a);
+    el.textContent="Could not send right now. Your results will be sent the next time you open this page. Please also screenshot this page.";
+  });
+}
+function flushPending(){
+  if(!SHEET_URL)return;var a=pend();if(!a.length)return;setPend([]);
+  a.forEach(function(p){postSheet(p).catch(function(){var b=pend();b.push(p);setPend(b)})});
+}
+// ---- Interview after the last word ----
+var iv;
+function ask(q,html){document.getElementById('int-q').textContent=q;document.getElementById('int-body').innerHTML=html}
+function yesNo(q,cb){ask(q,'<button id="iy">Yes</button> <button id="in" class="sec">No</button>');document.getElementById('iy').onclick=function(){cb(true)};document.getElementById('in').onclick=function(){cb(false)}}
+function textQ(q,cb){ask(q,'<input id="it" type="text" autocomplete="off" placeholder="e.g. Grammarly"><p><button id="ib">Next</button></p>');var t=document.getElementById('it');var f=function(){var v=t.value.replace(/\s+/g,' ').trim();if(!v){t.style.borderColor='#e55';return}cb(v)};document.getElementById('ib').onclick=f;t.onkeydown=function(e){if(e.key==='Enter')f()};t.focus()}
+function scaleQ(q,cb){var h='<div class="scale">';for(var i=1;i<=7;i++)h+='<button class="sec" data-n="'+i+'">'+i+'</button>';h+='</div><p class="mut">1 = least often, 7 = most often</p>';ask(q,h);document.querySelectorAll('.scale button').forEach(function(b){b.onclick=function(){cb(+b.dataset.n)}})}
+function doneInterview(){rows=rows.map(function(r){return r.concat([iv.consent,iv.grammarChecker,iv.tools,iv.frequency])});finish()}
+function askInterview(){
+  iv={consent:'no interview',grammarChecker:'no interview',tools:'no interview',frequency:'no interview'};
+  show('s-int');
+  yesNo('Do you consent to being interviewed?',function(y){
+    if(!y){iv.consent='no';return doneInterview()}
+    iv.consent='yes';
+    yesNo('Do you use AI grammar checkers?',function(y2){
+      if(!y2){iv.grammarChecker='no';iv.tools='n/a';iv.frequency='n/a';return doneInterview()}
+      iv.grammarChecker='yes';
+      textQ('Which ones do you use?',function(t){
+        iv.tools=t;
+        scaleQ('On a scale of 1-7, how frequently do you use them?',function(n){iv.frequency=String(n);doneInterview()});
+      });
+    });
+  });
+}
+if((window.matchMedia&&matchMedia('(pointer:coarse)').matches)||('ontouchstart' in window)){document.getElementById('touchnote').classList.remove('hide')}
+var HEAD=["participant","attempt","trial","characters","isWord","correct","reactionTime","interviewConsent","usesGrammarChecker","whichCheckers","frequency1to7"];
+
+var $=function(id){return document.getElementById(id)};
+function show(id){["s-start","s-task","s-int","s-end"].forEach(function(s){$(s).classList.toggle("hide",s!==id)});$("res").classList.toggle("hide",!(isRes&&id==="s-start"))}
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return{}}}
+function save(d){try{localStorage.setItem(KEY,JSON.stringify(d))}catch(e){}}
+function pidKey(){return $("pid").value.trim().toLowerCase()}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+
+function refreshStart(){
+  var d=load(), r=d[pidKey()]||[];
+  $("att").value=dbAttempts!==null?dbAttempts+1:r.length+1;
+  $("viewfirst").classList.toggle("hide",!((pidKey()&&r.length)||dbFirst));
+}
+$("pid").addEventListener("input",refreshStart);
+$("viewfirst").onclick=function(){if(dbFirst){showEnd(dbFirst,true);return}var r=load()[pidKey()];if(r&&r.length)showEnd(r[0],true)};
+
+var trials,idx,t0,listening,pid,attempt,rows;
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+
+$("begin").onclick=function(){
+  pid=$("pid").value.trim();
+  if(!pid){$("pid").focus();$("pid").style.borderColor="#e55";return}
+  attempt=Math.max(1,parseInt($("att").value,10)||1);
+  trials=shuffle(STIM.slice());rows=[];idx=0;show("s-task");next();
+};
+
+function next(){
+  if(idx>=trials.length){return askInterview()}
+  var t=trials[idx];
+  $("prog").textContent="Trial "+(idx+1)+" of "+trials.length;
+  $("stage").textContent=t.c;
+  listening=false;
+  requestAnimationFrame(function(){requestAnimationFrame(function(){t0=performance.now();listening=true})});
+}
+function respond(k){
+  if(!listening)return;
+  listening=false;
+  var rt=(performance.now()-t0)/1000, t=trials[idx];
+  var ok=((t.w===1&&k==="right")||(t.w===0&&k==="left"))?1:0;
+  rows.push([pid,attempt,idx+1,t.c,t.w,ok,rt.toFixed(4)]);
+  idx++;
+  $("stage").textContent="";
+  setTimeout(next,ITI_MS);
+}
+document.addEventListener("keydown",function(e){
+  if(e.key==="ArrowRight"||e.key==="ArrowLeft"){
+    if(!$("s-task").classList.contains("hide")){e.preventDefault();if(!e.repeat)respond(e.key==="ArrowRight"?"right":"left")}
+  }
+});
+document.querySelectorAll("#pad button").forEach(function(b){
+  b.addEventListener("pointerdown",function(e){e.preventDefault();respond(b.dataset.k)});
+});
+
+function finish(){
+  var rec={pid:pid,attempt:attempt,when:new Date().toISOString(),rows:rows};
+  var d=load(),key=pid.toLowerCase();
+  d[key]=d[key]||[];d[key].push(rec);save(d);
+  showEnd(rec,false);uploadRec(rec);sendToSheet(rec);
+}
+
+var cur;
+function showEnd(rec,isSavedView){
+  cur=rec;
+  var n=rec.rows.length,c=rec.rows.reduce(function(a,r){return a+r[5]},0);
+  var mean=rec.rows.reduce(function(a,r){return a+ +r[6]},0)/n;
+  $("e-banner").textContent="ATTEMPT "+rec.attempt+(isSavedView?" (saved)":"");
+  $("e-meta").innerHTML="Participant: <b>"+esc(rec.pid)+"</b> &middot; "+esc(new Date(rec.when).toLocaleString());
+  $("e-sum").innerHTML="Accuracy: <b>"+c+"/"+n+"</b> ("+Math.round(100*c/n)+"%) &middot; Mean reaction time: <b>"+mean.toFixed(3)+" s</b>";
+  var r0=rec.rows[0]||[],ivEl=$("e-iv");
+  if(r0.length>7&&r0[7]){
+    var h;
+    if(r0[7]!=="yes")h="Interview: <b>no interview</b>";
+    else if(r0[8]==="yes")h="AI grammar checker user: <b>Yes</b><br>Which AI grammar checkers?: <b>"+esc(r0[9])+"</b><br>Usage frequency: <b>"+esc(r0[10])+"</b>";
+    else h="AI grammar checker user: <b>No</b>";
+    ivEl.innerHTML=h;
+  }else ivEl.innerHTML="";
+  var first=(load()[rec.pid.toLowerCase()]||[])[0];
+  $("e-first").textContent=isSavedView?"This is your first attempt, saved on this device.":
+    (rec.attempt===1?"This is your FIRST attempt. Screenshot this page.":
+    (first?"Your first attempt is still saved on this device (use \"View my saved first attempt\" on the start screen).":""));
+  var h="<tr><th>Trial</th><th>Letters</th><th>Type</th><th>Correct</th><th>RT (s)</th></tr>";
+  $("tbl").innerHTML=h+rec.rows.map(function(r){return"<tr><td>"+esc(r[2])+"</td><td>"+esc(r[3])+"</td><td>"+(+r[4]?"Word":"Non-word")+"</td><td>"+(+r[5]?"&#10003;":"&#10007;")+"</td><td>"+(+r[6]).toFixed(3)+"</td></tr>"}).join("");
+  $("e-save").textContent="";buildTsv();$("copied").textContent="";show("s-end");window.scrollTo(0,0);
+}
+function buildTsv(){
+  var lines=cur.rows.map(function(r){return r.join("\t")});
+  if($("hdr").checked)lines.unshift(HEAD.join("\t"));
+  $("tsv").value=lines.join("\n");
+}
+$("hdr").onchange=buildTsv;
+$("copy").onclick=function(){
+  var ta=$("tsv");ta.select();
+  var done=function(){$("copied").textContent="Copied!"};
+  try{navigator.clipboard.writeText(ta.value).then(done,function(){document.execCommand("copy");done()})}
+  catch(e){try{document.execCommand("copy");done()}catch(_){$("copied").textContent="Press Ctrl/Cmd+C to copy"}}
+};
+$("again").onclick=function(){refreshStart();show("s-start")};
+
+// ---- Server storage (works when the viewer is signed in with write access; otherwise local only) ----
+var db=null,uid=null,dbAttempts=null,dbFirst=null,isRes=false;
+function rowsToArr(a,o){return o.map(function(x){return[a.pid,a.attempt,x.trial,x.characters,x.isWord,x.correct,x.reactionTime,x.consent||'',x.grammarChecker||'',x.tools||'',x.frequency||'']})}
+function toDbRows(rows){return rows.map(function(r){return{trial:r[2],characters:r[3],isWord:r[4],correct:r[5],reactionTime:r[6],consent:r[7],grammarChecker:r[8],tools:r[9],frequency:r[10]}})}
+function recFromDb(pid,a){return{pid:pid,attempt:a.attempt,when:a.when,rows:rowsToArr({pid:pid,attempt:a.attempt},a.rows)}}
+async function loadMine(){
+  try{var s=await db.doc('results/'+uid).get();
+    if(s.exists){var d=s.data(),at=d.attempts||[];dbAttempts=at.length;dbFirst=at.length?recFromDb(d.pid,at[0]):null}
+    else{dbAttempts=0}
+  }catch(e){dbAttempts=null}
+  refreshStart();
+}
+var LOCALMSG='';
+async function uploadRec(rec){
+  var el=$('e-save');
+  if(!db||!uid){el.textContent='';return}
+  el.textContent='Uploading...';
+  try{
+    var ref=db.doc('results/'+uid),s=await ref.get(),d=s.exists?s.data():{},at=d.attempts||[];
+    at.push({attempt:rec.attempt,when:rec.when,rows:toDbRows(rec.rows)});
+    await ref.set({pid:rec.pid,uid:uid,attempts:at});
+    dbAttempts=at.length;if(at.length===1)dbFirst=recFromDb(rec.pid,at[0]);
+    el.textContent='';
+  }catch(e){el.textContent=''}
+}
+function initRes(d){
+  isRes=true;$('res').classList.remove('hide');
+  var csv='';
+  $('rload').onclick=async function(){
+    $('rinfo').textContent='Loading...';
+    try{
+      var s=await d.collection('results').get(),all=[],people=0,first=$('rfirst').checked,lines=[],n=0;
+      s.docs.forEach(function(x){var v=x.data();people++;(v.attempts||[]).forEach(function(a){all.push({pid:v.pid,a:a})})});
+      all.sort(function(p,q){return p.pid<q.pid?-1:p.pid>q.pid?1:p.a.attempt-q.a.attempt});
+      all.forEach(function(e){if(first&&e.a.attempt!==1)return;n++;rowsToArr({pid:e.pid,attempt:e.a.attempt},e.a.rows).forEach(function(r){lines.push(r.join('\t'))})});
+      lines.unshift(HEAD.join('\t'));
+      $('rtsv').value=lines.join('\n');
+      csv=lines.map(function(l){return l.split('\t').map(function(f){return /[",]/.test(f)?'"'+f.replace(/"/g,'""')+'"':f}).join(',')}).join('\n');
+      $('rinfo').textContent=people+' participants, '+n+' attempts'+(first?' (first attempts only)':'')+', '+(lines.length-1)+' rows.';
+    }catch(e){$('rinfo').textContent='Could not load results.'}
+  };
+  $('rcopy').onclick=function(){var t=$('rtsv');t.select();try{navigator.clipboard.writeText(t.value)}catch(e){document.execCommand('copy')}};
+  $('rdl').onclick=async function(){
+    if(!csv)return;
+    try{var dl=await claude.use('downloads');if(dl)await dl.save({filename:'ldt_results.csv',data:csv})}catch(e){}
+  };
+  show('s-start');
+}
+(async function(){
+  try{
+    if(!window.claude)throw 0;
+    var user=await claude.use('user'),d=await claude.use('db');
+    if(user&&d){
+      uid=await user.id();var w=await user.can('data.write');
+      if(uid&&w!==false){db=d;loadMine()}
+      
+    }
+  }catch(e){}
+  $('mode').textContent=db?'Your results will be saved automatically for the researcher.':(SHEET_URL?'Your results will be sent to the researcher automatically when you finish.':'Results will be saved on this device only. Please screenshot your first attempt.');
+})();
+refreshStart();
+flushPending();
+</script>
+</body>
+</html>
+
+
